@@ -1,0 +1,488 @@
+unit uCadCliente;
+
+// -------------------------------------------------------------
+// Formulario principla onde é feito a pesquisa e o CRUD dos
+// dados do Cliente.
+// -------------------------------------------------------------
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.StdCtrls, Vcl.Grids, Vcl.ExtCtrls, Vcl.ComCtrls, uCliente, uClienteList,
+  uClienteDAO, Vcl.Buttons, Vcl.Menus, UValidacaoDocumento, Vcl.Mask;
+
+type
+  TModoTela = (mtNenhum, mtBrowse, mtInsercao, mtEdicao);
+
+type
+  TCadCliente = class(TForm)
+    pgPrincipal: TPageControl;
+    tsCadastro: TTabSheet;
+    tsConsulta: TTabSheet;
+    pnlFiltro: TPanel;
+    grdClientes: TStringGrid;
+    edtPesquisa: TEdit;
+    lblPesquisa: TLabel;
+    pnlCadastro: TPanel;
+    edtID: TEdit;
+    lblID: TLabel;
+    edtNome: TEdit;
+    lblNome: TLabel;
+    Label1: TLabel;
+    edtEmail: TEdit;
+    Label2: TLabel;
+    Panel1: TPanel;
+    btnSalvar: TButton;
+    btnCancelar: TButton;
+    btnNovo: TButton;
+    btnExcluir: TBitBtn;
+    popGrid: TPopupMenu;
+    miExcluir: TMenuItem;
+    edtDocumento: TEdit;
+    miNovoRegistro: TMenuItem;
+    miEditarRegistro: TMenuItem;
+    btnEditar: TButton;
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure edtPesquisaChange(Sender: TObject);
+    procedure grdClientesDblClick(Sender: TObject);
+    procedure btnExcluirClick(Sender: TObject);
+    procedure miExcluirClick(Sender: TObject);
+    procedure btnSalvarClick(Sender: TObject);
+    procedure btnCancelarClick(Sender: TObject);
+    procedure grdClientesMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure miNovoRegistroClick(Sender: TObject);
+    procedure miEditarRegistroClick(Sender: TObject);
+    procedure btnNovoClick(Sender: TObject);
+    procedure btnEditarClick(Sender: TObject);
+  private
+    FModo: TModoTela;
+    FClienteDAO: TClienteDAO;
+    FClientes: TClienteList;
+    FSelecionado: TCliente;
+    procedure ConfigurarGrid;
+    procedure AtualizarGrid(const AFiltro: string);
+    procedure AbrirCadastro(ACliente: TCliente);
+    procedure LimparCadastro;
+    procedure HabilitaDesabilitaCampos(AValor: Boolean);
+    procedure ExcluirRegistro;
+    procedure SalvarRegistro;
+    procedure CancelarRegistro;
+    procedure NovoRegistro;
+    procedure EditarRegistro;
+    procedure HabilitaDesabilitaBotoes;
+    function LerCamposParaCliente(ACliente: TCliente): Boolean;
+    function BuscaIDRegistro: Integer;
+  end;
+
+var
+  CadCliente: TCadCliente;
+
+implementation
+
+uses
+  System.Generics.Collections, System.Math;
+
+{$R *.dfm}
+
+procedure TCadCliente.AbrirCadastro(ACliente: TCliente);
+begin
+  FSelecionado := ACliente;
+  LimparCadastro;
+
+  if Assigned(ACliente) then
+  begin
+    edtID.Text := ACliente.ID.ToString;
+    edtNome.Text := ACliente.Nome;
+    edtEmail.Text := ACliente.Email;
+    edtDocumento.Text := ACliente.Documento;
+    FModo := mtBrowse;
+  end
+  else
+    edtID.Text := IntToStr(FClientes.ProximoID);
+
+  pgPrincipal.ActivePage := tsCadastro;
+  HabilitaDesabilitaBotoes;
+end;
+
+procedure TCadCliente.AtualizarGrid(const AFiltro: string);
+var
+  vListaFiltrada: TList<TCliente>;
+  I, vRowCount, vIndex: Integer;
+begin
+  vListaFiltrada := FClientes.Buscar(AFiltro);
+  try
+    try
+      grdClientes.RowCount := 1;
+
+      vRowCount := vListaFiltrada.Count;
+      if vRowCount > 0 then
+      begin
+        grdClientes.RowCount := vRowCount + 1;
+        for I := 0 to vRowCount - 1 do
+        begin
+          vIndex := I + 1;
+          grdClientes.Cells[0, vIndex] := vListaFiltrada[I].ID.ToString;
+          grdClientes.Cells[1, vIndex] := vListaFiltrada[I].Nome;
+          grdClientes.Cells[2, vIndex] := vListaFiltrada[I].Email;
+          grdClientes.Cells[3, vIndex] := vListaFiltrada[I].Documento;
+        end;
+      end;
+    finally
+      grdClientes.Invalidate;
+    end;
+  finally
+    vListaFiltrada.Free;
+  end;
+end;
+
+procedure TCadCliente.btnCancelarClick(Sender: TObject);
+begin
+  CancelarRegistro;
+end;
+
+procedure TCadCliente.btnEditarClick(Sender: TObject);
+begin
+  EditarRegistro;
+end;
+
+procedure TCadCliente.btnExcluirClick(Sender: TObject);
+begin
+  ExcluirRegistro;
+end;
+
+procedure TCadCliente.btnNovoClick(Sender: TObject);
+begin
+  NovoRegistro;
+  HabilitaDesabilitaCampos(True);
+end;
+
+procedure TCadCliente.btnSalvarClick(Sender: TObject);
+begin
+  SalvarRegistro;
+end;
+
+function TCadCliente.BuscaIDRegistro: Integer;
+begin
+  if pgPrincipal.ActivePage = tsConsulta then
+  begin
+    if (grdClientes.Row > 0) then
+      Result := StrToIntDef(grdClientes.Cells[0, grdClientes.Row], 0)
+    else
+      Result := 0;
+  end
+  else
+    Result := StrToIntDef(edtID.Text, 0);
+end;
+
+procedure TCadCliente.CancelarRegistro;
+begin
+  LimparCadastro;
+  FSelecionado := nil;
+  FModo := mtNenhum;
+  HabilitaDesabilitaCampos(False);
+end;
+
+procedure TCadCliente.ConfigurarGrid;
+begin
+  grdClientes.ColCount := 4;
+  grdClientes.FixedRows := 1;
+  grdClientes.ScrollBars := ssBoth;
+  grdClientes.RowCount := 2;
+
+  grdClientes.Cells[0, 0] := 'ID';
+  grdClientes.Cells[1, 0] := 'Nome';
+  grdClientes.Cells[2, 0] := 'E-mail';
+  grdClientes.Cells[3, 0] := 'Documento';
+
+  grdClientes.ColWidths[0] := 50; // ID
+  grdClientes.ColWidths[1] := 180; // Nome
+  grdClientes.ColWidths[2] := 100; // E-mail
+  grdClientes.ColWidths[3] := 14; // Documento
+end;
+
+procedure TCadCliente.EditarRegistro;
+var
+  vID: Integer;
+  vCliente: TList<TCliente>;
+begin
+  vID := BuscaIDRegistro;
+  vCliente := FClientes.BuscaPorID(vID);
+  try
+    if vCliente.Count > 0 then
+      AbrirCadastro(vCliente.Items[0])
+    else
+      ShowMessage
+        ('Cliente não encontrado na lista. A lista pode estar desatualizada.');
+  finally
+    vCliente.Free;
+  end;
+  HabilitaDesabilitaCampos(True);
+  FModo := mtEdicao;
+  HabilitaDesabilitaBotoes;
+end;
+
+procedure TCadCliente.edtPesquisaChange(Sender: TObject);
+begin
+  AtualizarGrid(edtPesquisa.Text);
+end;
+
+procedure TCadCliente.ExcluirRegistro;
+var
+  vID: Integer;
+  vLista: TList<TCliente>;
+  vCliente: TCliente;
+begin
+  vID := BuscaIDRegistro;
+  vLista := FClientes.BuscaPorID(vID);
+  vCliente := vLista[0];
+
+  if (vID > 0) and (MessageDlg('Tem certeza que deseja excluir o cliente "' +
+    vCliente.Nome + '"?', mtConfirmation, [mbYes, mbNo], 0) = mrYes) then
+  begin
+    if FClientes.RemovePorID(vID) then
+    begin
+      if FClienteDAO.Save(FClientes) then
+      begin
+        AtualizarGrid(edtPesquisa.Text);
+      end;
+    end
+    else
+      ShowMessage('O cliente selecionado não foi encontrado na lista.');
+  end;
+  HabilitaDesabilitaBotoes;
+end;
+
+procedure TCadCliente.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  if FClienteDAO.Save(FClientes) then
+  begin
+    FClientes.Free;
+    FClienteDAO.Free;
+  end;
+end;
+
+procedure TCadCliente.FormCreate(Sender: TObject);
+begin
+  FModo := mtNenhum;
+  FClientes := TClienteList.Create(True);
+  FClienteDAO := TClienteDAO.Create;
+  if FClienteDAO.Load(FClientes) then
+    HabilitaDesabilitaCampos(False);
+  pgPrincipal.ActivePage := tsConsulta;
+  ConfigurarGrid;
+  AtualizarGrid(edtPesquisa.Text);
+  HabilitaDesabilitaCampos(False);
+end;
+
+procedure TCadCliente.grdClientesDblClick(Sender: TObject);
+var
+  vID: Integer;
+  vClientes: TList<TCliente>;
+begin
+  if grdClientes.Row > 0 then
+  begin
+    vID := StrToIntDef(grdClientes.Cells[0, grdClientes.Row], 0);
+
+    if vID > 0 then
+    begin
+      vClientes := FClientes.BuscaPorID(vID);
+      try
+        if vClientes.Count > 0 then
+          AbrirCadastro(vClientes.Items[0]);
+      finally
+        vClientes.Free;
+      end;
+    end;
+  end;
+end;
+
+procedure TCadCliente.grdClientesMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  vCol, vRow: Integer;
+  vPoint: TPoint;
+begin
+  if Button = mbRight then
+  begin
+    grdClientes.MouseToCell(X, Y, vCol, vRow);
+    if vRow > 0 then
+    begin
+      grdClientes.Row := vRow;
+      vPoint := Mouse.CursorPos;
+      popGrid.Popup(vPoint.X, vPoint.Y);
+    end;
+  end;
+end;
+
+procedure TCadCliente.HabilitaDesabilitaBotoes;
+begin
+  btnSalvar.Enabled := ((FModo = mtEdicao) or (FModo = mtInsercao));
+  btnEditar.Enabled := (FModo = mtBrowse);
+  btnCancelar.Enabled := ((FModo = mtEdicao) or (FModo = mtInsercao));
+  btnNovo.Enabled := ((FModo = mtBrowse) or (FModo = mtNenhum));
+  btnExcluir.Enabled := ((FModo = mtBrowse) or (FModo = mtEdicao));
+end;
+
+procedure TCadCliente.HabilitaDesabilitaCampos(AValor: Boolean);
+begin
+  edtNome.Enabled := AValor;
+  edtEmail.Enabled := AValor;
+  edtDocumento.Enabled := AValor;
+  HabilitaDesabilitaBotoes;
+end;
+
+function TCadCliente.LerCamposParaCliente(ACliente: TCliente): Boolean;
+var
+  vTexto: string;
+begin
+  Result := False;
+
+  vTexto := edtNome.Text;
+  if Trim(edtNome.Text) = '' then
+  begin
+    ShowMessage('O campo Nome é obrigatório.');
+    edtNome.SetFocus;
+    Exit;
+  end;
+
+  vTexto := edtEmail.Text;
+  if vTexto = '' then
+  begin
+    ShowMessage('O campo E-mail é obrigatório.');
+    edtEmail.SetFocus;
+    Exit;
+  end;
+
+  if Pos('@', vTexto) = 0 then
+  begin
+    ShowMessage('O e-mail informado não é válido.');
+    edtEmail.SetFocus;
+    Exit;
+  end;
+
+  vTexto := edtDocumento.Text;
+  if vTexto = '' then
+  begin
+    ShowMessage('O campo Documento (CPF/CNPJ) é obrigatório.');
+    edtDocumento.SetFocus;
+    Exit;
+  end;
+
+  if (Length(RemoveCaracteres(vTexto)) = 11) then
+  begin
+    if not ValidarCPF(vTexto) then
+    begin
+      ShowMessage('CPF inválido.');
+      edtDocumento.SetFocus;
+      Exit(False);
+    end;
+  end
+  else if (Length(RemoveCaracteres(vTexto)) = 14) then
+  begin
+    if not ValidarCNPJ(vTexto) then
+    begin
+      ShowMessage('CNPJ inválido.');
+      edtDocumento.SetFocus;
+      Exit(False);
+    end;
+  end
+  else
+  begin
+    ShowMessage('Documento deve ser um CPF (11 dígitos) ou CNPJ (14 dígitos).');
+    edtDocumento.SetFocus;
+    Exit(False);
+  end;
+
+  ACliente.Nome := edtNome.Text;
+  ACliente.Email := edtEmail.Text;
+  ACliente.Documento := edtDocumento.Text;
+  Result := True;
+end;
+
+procedure TCadCliente.LimparCadastro;
+var
+  I: Integer;
+begin
+  FModo := mtNenhum;
+  for I := 0 to Self.ComponentCount - 1 do
+  begin
+    if Self.Components[I] is TEdit then
+    begin
+      (Self.Components[I] as TEdit).Clear;
+    end
+    else if Self.Components[I] is TMaskEdit then
+      (Self.Components[I] as TMaskEdit).Clear;
+  end;
+end;
+
+procedure TCadCliente.miEditarRegistroClick(Sender: TObject);
+begin
+  EditarRegistro;
+end;
+
+procedure TCadCliente.miExcluirClick(Sender: TObject);
+begin
+  ExcluirRegistro;
+end;
+
+procedure TCadCliente.NovoRegistro;
+begin
+  LimparCadastro;
+  FModo := mtInsercao;
+  FSelecionado := nil;
+  pgPrincipal.ActivePage := tsCadastro;
+  edtID.Text := IntToStr(FClientes.ProximoID);
+  HabilitaDesabilitaBotoes;
+end;
+
+procedure TCadCliente.miNovoRegistroClick(Sender: TObject);
+begin
+  NovoRegistro;
+end;
+
+procedure TCadCliente.SalvarRegistro;
+var
+  vNovo: Boolean;
+begin
+  vNovo := not Assigned(FSelecionado);
+  try
+    try
+      if vNovo then
+      begin
+        FSelecionado := TCliente.Create;
+        FSelecionado.ID := StrToInt(edtID.Text);
+      end;
+
+      if LerCamposParaCliente(FSelecionado) then
+      begin
+        if vNovo then
+          FClientes.Add(FSelecionado);
+
+        if FClienteDAO.Save(FClientes) then
+        begin
+          AtualizarGrid(edtPesquisa.Text);
+          FModo := mtBrowse;
+          HabilitaDesabilitaCampos(False);
+        end;
+      end;
+    except
+      on E: Exception do
+      begin
+        ShowMessage('Não foi possível salvar: ' + E.Message);
+
+        if vNovo and Assigned(FSelecionado) then
+        begin
+          FSelecionado.Free;
+        end;
+      end;
+    end;
+  finally
+    FSelecionado := nil;
+  end;
+end;
+
+end.

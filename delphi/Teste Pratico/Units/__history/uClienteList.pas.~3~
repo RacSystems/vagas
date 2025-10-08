@@ -1,0 +1,66 @@
+unit uClienteList;
+
+interface
+
+uses
+  System.Generics.Collections, uCliente, System.SysUtils;
+
+type
+  TClienteList = class(TObjectList<TCliente>)
+  public
+    function BuscaPorID(AID: Integer): TCliente;
+    function BuscarPorNome(const ANome: string): TList<TCliente>;
+    // function NextID: Integer;
+  end;
+
+implementation
+
+function TClienteList.BuscaPorID(AID: Integer): TCliente;
+var
+  vCliente: TCliente;
+begin
+  for vCliente in Self do
+    if vCliente.ID = AID then
+      Exit(vCliente);
+  Result := nil;
+end;
+
+function TClienteList.BuscarPorNome(const ANome: string): TList<TCliente>;
+var
+  vCliente: TCliente;
+  vListResult: TList<TCliente>;
+  vNomeBusca: string;
+begin
+  vListResult := TList<TCliente>.Create;
+  Result := vListResult; // Atribui o resultado antes do loop
+
+  vNomeBusca := LowerCase(ANome.Trim);
+
+  // Se a busca for vazia, retorna a lista completa
+  if vNomeBusca.IsEmpty then
+  begin
+    for vCliente in Self do
+      vListResult.Add(vCliente);
+  end
+  else // Realiza a busca parcial
+  begin
+    for vCliente in Self do
+      if Pos(vNomeBusca, LowerCase(vCliente.Nome)) > 0 then
+        vListResult.Add(vCliente);
+  end;
+end;
+
+{
+  function TClienteList.NextID: Integer;
+  var
+  MaxID: Integer;
+  C: TCliente;
+  begin
+  MaxID := 0;
+  for C in Self do
+  if C.ID > MaxID then
+  MaxID := C.ID;
+  Result := MaxID + 1;
+  end;
+}
+end.

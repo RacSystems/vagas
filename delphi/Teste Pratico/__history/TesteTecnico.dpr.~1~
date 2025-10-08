@@ -1,0 +1,14 @@
+program TesteTecnico;
+
+uses
+  Vcl.Forms,
+  UCadCliente in 'UCadCliente.pas' {CadCliente};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TCadCliente, CadCliente);
+  Application.Run;
+end.

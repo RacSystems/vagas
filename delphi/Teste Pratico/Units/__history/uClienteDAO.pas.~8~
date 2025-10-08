@@ -1,0 +1,155 @@
+unit uClienteDAO;
+
+// -------------------------------------------------------------
+// TClienteDAO: Unit onde lê e grava a lista de clientes em um
+// JSON no disco.
+// -------------------------------------------------------------
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, System.Generics.Collections,
+  System.IOUtils, uCliente, uClienteList;
+
+type
+  TClienteDAO = class
+  private
+    FFileName: string;
+    procedure EnsureFile;
+    function ClienteToJSON(const CCliente: TCliente): TJSONObject;
+    function JSONToCliente(const CObj: TJSONObject): TCliente;
+  public
+    constructor Create(const AFileName: string = '');
+    procedure Load(AList: TClienteList);
+    procedure Save(AList: TClienteList);
+    property FileName: string read FFileName;
+  end;
+
+implementation
+
+{ TClienteDAO }
+
+constructor TClienteDAO.Create(const AFileName: string);
+begin
+  if AFileName.Trim <> '' then
+    FFileName := AFileName
+  else
+    // Padrão: arquivo ao lado do executável
+    FFileName := TPath.Combine(ExtractFilePath(ParamStr(0)), 'clientes.json');
+
+  EnsureFile;
+end;
+
+procedure TClienteDAO.EnsureFile;
+begin
+  // Se o arquivo não existir, cria com um JSON vazio
+  if not TFile.Exists(FFileName) then
+    TFile.WriteAllText(FFileName, '[]', TEncoding.UTF8);
+end;
+
+function TClienteDAO.ClienteToJSON(const CCliente: TCliente): TJSONObject;
+begin
+  // Busca os dados do arquivo JSON
+  Result := TJSONObject.Create;
+  Result.AddPair('ID', TJSONNumber.Create(CCliente.ID));
+  Result.AddPair('Nome', CCliente.Nome);
+  Result.AddPair('Email', CCliente.Email);
+  Result.AddPair('Documento', CCliente.Documento);
+end;
+
+function TClienteDAO.JSONToCliente(const CObj: TJSONObject): TCliente;
+var
+  vValor: TJSONValue;
+begin
+  // Pega os dados do arquivo JSON
+  Result := TCliente.Create;
+  try
+    Result.ID := CObj.GetValue<Integer>('ID', 0);
+    Result.Nome := CObj.GetValue<string>('Nome', '');
+    Result.Email := CObj.GetValue<string>('Email', '');
+    Result.Documento := CObj.GetValue<string>('Documento', '');
+  except
+    on E: Exception do
+    begin
+      raise Exception.CreateFmt('Erro ao buscar os dados: %s', [E.Message]);
+    end;
+  end;
+end;
+
+procedure TClienteDAO.Load(AList: TClienteList);
+var
+  vDados: string;
+  vArquivo: TJSONValue;
+  vArray: TJSONArray;
+  vItem: TJSONValue;
+begin
+  // Limpa a lista antes de carregar
+  AList.Clear;
+
+  // Limpa o StringGrid antes de preencher
+  EnsureFile;
+
+  try
+    // Lê o conteúdo do arquivo como texto UTF-8
+    vDados := TFile.ReadAllText(FFileName, TEncoding.UTF8);
+    vArquivo := TJSONObject.ParseJSONValue(vDados);
+
+    if (vArquivo is TJSONArray) then
+    begin
+      vArray := TJSONArray(vArquivo);
+      for vItem in vArray do
+      begin
+        if vItem is TJSONObject then
+        begin
+          AList.Add(JSONToCliente(TJSONObject(vItem)));
+        end;
+      end;
+    end
+    else
+    begin
+      raise Exception.Create
+        ('Formato de arquivo JSON inesperado. Esperado um array de clientes.');
+    end;
+  finally
+    if Assigned(vArquivo) then
+      vArquivo.Free;
+  end;
+end;
+
+procedure TClienteDAO.Save(AList: TClienteList);
+var
+  vArray: TJSONArray;
+  vCliente: TCliente;
+  vContFor: string;
+  vNomArqTemp: string;
+begin
+  // Monta um array JSON com todos os clientes
+  vArray := TJSONArray.Create;
+  try
+    for vCliente in AList do
+      vArray.AddElement(ClienteToJSON(vCliente));
+
+    // Formata com identação de 2 espaços
+    vContFor := vArray.Format(2) + sLineBreak;
+
+    // Grava em arquivo temporário e depois move/substitui
+    vNomArqTemp := FFileName + '.tmp';
+    try
+      TFile.WriteAllText(vNomArqTemp, vContFor, TEncoding.UTF8);
+      TFile.Move(vNomArqTemp, FFileName);
+    except
+      on E: Exception do
+      begin
+        if TFile.Exists(vNomArqTemp) then
+          TFile.Delete(vNomArqTemp);
+
+        raise Exception.CreateFmt('Erro ao salvar o arquivo JSON: %s',
+          [E.Message]);
+      end;
+    end;
+  finally
+    vArray.Free;
+  end;
+end;
+
+end.
