@@ -1,0 +1,110 @@
+unit UValidacaoDocumento;
+
+interface
+
+function ValidarCPF(const ACPF: string): Boolean;
+function ValidarCNPJ(const ACNPJ: string): Boolean;
+
+implementation
+
+uses
+  System.SysUtils, System.Math;
+
+// Função auxiliar para remover caracteres não numéricos
+function RemoveCaracteres(const ATexto: string): string;
+var
+  I: Integer;
+begin
+  Result := '';
+  for I := 1 to Length(ATexto) do
+    if ATexto[I] in ['0'..'9'] then
+      Result := Result + ATexto[I];
+end;
+
+function ValidarCPF(const ACPF: string): Boolean;
+var
+  S, S1, S2, S3: string;
+  I, N1, N2, Soma, Digito: Integer;
+begin
+  S := RemoveCaracteres(ACPF);
+  if Length(S) <> 11 then
+  begin
+    Result := False;
+    Exit;
+  end;
+  // Verifica se todos os dígitos são iguais (inválido)
+  if S = '00000000000' then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  S1 := Copy(S, 1, 9);
+  N1 := 10;
+  Soma := 0;
+  for I := 1 to 9 do
+  begin
+    Soma := Soma + StrToInt(S1[I]) * N1;
+    Dec(N1);
+  end;
+  Digito := Soma mod 11;
+  if Digito < 2 then Digito := 0 else Digito := 11 - Digito;
+  S2 := S1 + IntToStr(Digito);
+
+  N2 := 11;
+  Soma := 0;
+  for I := 1 to 10 do
+  begin
+    Soma := Soma + StrToInt(S2[I]) * N2;
+    Dec(N2);
+  end;
+  Digito := Soma mod 11;
+  if Digito < 2 then Digito := 0 else Digito := 11 - Digito;
+  S3 := S2 + IntToStr(Digito);
+  Result := (S = S3);
+end;
+
+function ValidarCNPJ(const ACNPJ: string): Boolean;
+var
+  S, S1, S2, S3: string;
+  I, N1, N2, Soma, Digito: Integer;
+begin
+  S := RemoveCaracteres(ACNPJ);
+  if Length(S) <> 14 then
+  begin
+    Result := False;
+    Exit;
+  end;
+  // Verifica se todos os dígitos são iguais (inválido)
+  if S = '00000000000000' then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  S1 := Copy(S, 1, 12);
+  Soma := 0;
+  N1 := 5;
+  for I := 1 to 12 do
+  begin
+    Soma := Soma + StrToInt(S1[I]) * N1;
+    if N1 = 2 then N1 := 9 else Dec(N1);
+  end;
+  Digito := Soma mod 11;
+  if Digito < 2 then Digito := 0 else Digito := 11 - Digito;
+  S2 := S1 + IntToStr(Digito);
+
+  Soma := 0;
+  N2 := 6;
+  for I := 1 to 13 do
+  begin
+    Soma := Soma + StrToInt(S2[I]) * N2;
+    if N2 = 2 then N2 := 9 else Dec(N2);
+  end;
+  Digito := Soma mod 11;
+  if Digito < 2 then Digito := 0 else Digito := 11 - Digito;
+  S3 := S2 + IntToStr(Digito);
+  Result := (S = S3);
+end;
+
+end.

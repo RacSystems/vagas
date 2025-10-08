@@ -1,0 +1,33 @@
+unit uCadCliente;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Grids, Vcl.ExtCtrls,
+  Vcl.ComCtrls;
+
+type
+  TCadCliente = class(TForm)
+    pcPrincipal: TPageControl;
+    tsConsulta: TTabSheet;
+    tsCadastro: TTabSheet;
+    pnlFiltro: TPanel;
+    StringGrid1: TStringGrid;
+    edtPesquisa: TEdit;
+    lblPesquisa: TLabel;
+    btnPesquisar: TButton;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  CadCliente: TCadCliente;
+
+implementation
+
+{$R *.dfm}
+
+end.

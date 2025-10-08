@@ -1,0 +1,45 @@
+unit uCliente;
+
+interface
+
+type
+  TCliente = class
+  private
+    FID: Integer;
+    FNome: string;
+    FEmail: string;
+    FDocumento: string;
+  public
+    property ID: Integer read FID write FID;
+    property Nome: string read FNome write FNome;
+    property Email: string read FEmail write FEmail;
+    property Documento: string read FDocumento write FDocumento;
+
+    function ToCSV: string;
+    class function FromCSV(const Line: string): TCliente;
+  end;
+
+implementation
+
+uses
+  System.SysUtils;
+
+function TCliente.ToCSV: string;
+begin
+  Result := Format('%d;%s;%s;%s', [FID, FNome, FEmail, FDocumento]);
+end;
+
+class function TCliente.FromCSV(const Line: string): TCliente;
+var
+  Parts: TArray<string>;
+begin
+  Parts := Line.Split([';']);
+  Result := TCliente.Create;
+  Result.ID := StrToIntDef(Parts[0], 0);
+  Result.Nome := Parts[1];
+  Result.Email := Parts[2];
+  Result.Documento := Parts[3];
+end;
+
+end.
+
