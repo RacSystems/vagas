@@ -19,8 +19,14 @@ O objetivo deste teste é avaliar seu domínio prático em **Delphi**, com foco 
 - Permitir a exclusão de cadastros.  
 - Exibir os dados em uma **grid simples**.  
 - Permitir a pesquisa de clientes por **ID** e/ou **Nome**.  
+- A aplicação deve separar a extrutura visual, da regra de negocio e da manipulação do registro (Aplicar MVC)
+- O documento deve ter uma validação para saber se é um documento valido
 
 ---
+### 💡 Funcionaliades Extras
+- Exportar o conteudo da listagem para CSV
+- Input de pesquisa com coportamento dinamico (Sempre que você digitar a pesquisa ser feita com base no que já foi escrito)
+
 
 ### 💾 Persistência dos Dados
 - Os dados devem ser armazenados em um **arquivo texto** (em vez de um banco de dados).  
