@@ -20,7 +20,7 @@ O objetivo deste teste é avaliar seu domínio prático em **Delphi**, com foco 
 - Exibir os dados em uma **grid simples**.  
 - Permitir a pesquisa de clientes por **ID** e/ou **Nome**.  
 - A aplicação deve separar a extrutura visual, da regra de negocio e da manipulação do registro (Aplicar MVC)
-- O documento deve ter uma validação para saber se é um documento valido
+- O documento deve ter uma trativa para saber se é um documento válido (verificação de digito)
 
 ---
 ### 💡 Funcionaliades Extras
