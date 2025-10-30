@@ -9,18 +9,40 @@ uses
   FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.ODBC,
   FireDAC.Phys.ODBCDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
   FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
-  FireDAC.Comp.Client, FireDAC.Phys.ODBCBase;
+  FireDAC.Comp.Client, FireDAC.Phys.ODBCBase, Vcl.ComCtrls, Vcl.StdCtrls,
+  Vcl.Buttons, System.ImageList, Vcl.ImgList, Vcl.Imaging.pngimage,
+  Vcl.ExtCtrls, FireDAC.Comp.BatchMove.DataSet, FireDAC.Comp.BatchMove,
+  Vcl.Grids, Vcl.DBGrids;
 
 type
   TForm1 = class(TForm)
     FDConn: TFDConnection;
     ODBC_CSV: TFDPhysODBCDriverLink;
     qryPrinc: TFDTable;
+    DSPrinc: TDataSource;
     qryPrincID: TIntegerField;
     qryPrincNome: TStringField;
     qryPrincEmail: TStringField;
     qryPrincDocumento: TFloatField;
-    DSPrinc: TDataSource;
+    BatchMove: TFDBatchMove;
+    Reader: TFDBatchMoveDataSetReader;
+    Writer: TFDBatchMoveDataSetWriter;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    Image1: TImage;
+    Panel3: TPanel;
+    Label1: TLabel;
+    edtPesquisar: TEdit;
+    Label2: TLabel;
+    ImageList1: TImageList;
+    btnPesquisar: TBitBtn;
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
+    Panel4: TPanel;
+    DBGrid1: TDBGrid;
+    procedure FormCreate(Sender: TObject);
+    procedure btnPesquisarClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -33,5 +55,24 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TForm1.btnPesquisarClick(Sender: TObject);
+begin
+  // Iremos fazer as pesquisar necessarias baseado no nome e também no ID.
+  qryPrinc.Close;
+  if Trim(edtPesquisar.Text) <> '' then
+  begin
+    qryPrinc.SQL.Add('WHERE ID = 0' + edtPesquisar.Text);
+    qryPrinc.SQL.Add('OR Nome = ' + QuotedStr(edtPesquisar.Text));
+  end;
+  qryPrinc.Open;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  // Aqui iremos já abrir o campo da qry para evitar problemas.
+  qryPrinc.Close;
+  qryPrinc.Open;
+end;
 
 end.
