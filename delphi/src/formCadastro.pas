@@ -1,0 +1,360 @@
+unit formCadastro;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.ODBC,
+  FireDAC.Phys.ODBCDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, FireDAC.Phys.ODBCBase, Vcl.ComCtrls, Vcl.StdCtrls,
+  Vcl.Buttons, System.ImageList, Vcl.ImgList, Vcl.Imaging.pngimage,
+  Vcl.ExtCtrls, FireDAC.Comp.BatchMove.DataSet, FireDAC.Comp.BatchMove,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask, Vcl.DBCtrls, FireDAC.Comp.BatchMove.Text, uDAOConexao, uControllerConexao, uValidacaoCPFCNPJ,
+  uValidarCadastro, uClienteModel;
+
+type
+  TForm1 = class(TForm)
+    DSPrinc: TDataSource;
+    BatchMove: TFDBatchMove;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    Image1: TImage;
+    Label1: TLabel;
+    ImageList1: TImageList;
+    PageControl1: TPageControl;
+    TabSheet1: TTabSheet;
+    TabCadastro: TTabSheet;
+    Panel4: TPanel;
+    DBGrid1: TDBGrid;
+    qryPrinc: TFDQuery;
+    btnEditar: TSpeedButton;
+    btnCancelar: TSpeedButton;
+    btnExcluir: TSpeedButton;
+    btnInserir: TSpeedButton;
+    btnSalvar: TSpeedButton;
+    Label3: TLabel;
+    lblEmail: TLabel;
+    Label5: TLabel;
+    dbEdtNome: TDBEdit;
+    dbEdtEmail: TDBEdit;
+    dbEdtDocumento: TDBEdit;
+    Panel3: TPanel;
+    Label2: TLabel;
+    edtPesquisar: TEdit;
+    TimerLiberarPage: TTimer;
+    WriterCSV: TFDBatchMoveTextWriter;
+    Reader: TFDBatchMoveDataSetReader;
+    memPrinc: TFDMemTable;
+    BitBtn1: TBitBtn;
+    SaveDialog1: TSaveDialog;
+    ODBC_CSV: TFDPhysODBCDriverLink;
+    qryPrincNome: TStringField;
+    qryPrincEmail: TStringField;
+    qryPrincID: TIntegerField;
+    qryPrincDocumento: TStringField;
+    procedure btnPesquisarClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure btnInserirClick(Sender: TObject);
+    procedure btnEditarClick(Sender: TObject);
+    procedure btnCancelarClick(Sender: TObject);
+    procedure btnSalvarClick(Sender: TObject);
+    procedure btnExcluirClick(Sender: TObject);
+    procedure qryPrincBeforePost(DataSet: TDataSet);
+    procedure PageControl1Change(Sender: TObject);
+    procedure DSPrincStateChange(Sender: TObject);
+    procedure TimerLiberarPageTimer(Sender: TObject);
+    procedure qryPrincAfterScroll(DataSet: TDataSet);
+    procedure qryPrincAfterPost(DataSet: TDataSet);
+    procedure qryPrincBeforeDelete(DataSet: TDataSet);
+    procedure qryPrincAfterDelete(DataSet: TDataSet);
+    procedure edtPesquisarChange(Sender: TObject);
+    procedure BitBtn1Click(Sender: TObject);
+    procedure qryPrincBeforeEdit(DataSet: TDataSet);
+    procedure dbEdtNomeKeyPress(Sender: TObject; var Key: Char);
+  private
+    { Private declarations }
+    procedure controleBotoes;
+    procedure atualizarCsv;
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.atualizarCsv;
+begin
+  // Extrai a regra duplicada para esta procedure, centralizando a atualização do CSV.
+  try
+    // Copia dados para TFDMemTable para evitar lock do arquivo CSV durante o BatchMove.
+    memPrinc.CopyDataSet(qryPrinc, [coStructure, coRestart, coAppend]);
+
+    TControllerConexao.getInstance.DaoConexao.getConexao.Connected := False;
+
+    BatchMove.Execute;
+  finally
+    TControllerConexao.getInstance.DaoConexao.getConexao.Connected := True;
+    btnPesquisarClick(nil);
+  end;
+end;
+
+procedure TForm1.BitBtn1Click(Sender: TObject);
+var
+  CSVFile: TextFile;
+begin
+  SaveDialog1.FileName := 'banco.csv';
+  // Exporta o conteúdo de qryPrinc linha a linha para CSV (com cabeçalho).
+  if SaveDialog1.Execute then
+  begin
+    AssignFile(CSVFile, SaveDialog1.FileName);
+    Rewrite(CSVFile);
+    try
+      // Cabeçalho do CSV
+      Writeln(CSVFile, 'ID,Nome,E-mail,Documento');
+
+      // Percorrer os Registros com o While
+      qryPrinc.DisableControls;
+      qryPrinc.First;
+      while not qryPrinc.Eof do
+      begin
+        Writeln(CSVFile,
+          qryPrinc.FieldByName('ID').AsString + ',' +
+          '"' + qryPrinc.FieldByName('Nome').AsString + '",' +
+          '"' + qryPrinc.FieldByName('E-mail').AsString + '",' +
+          qryPrinc.FieldByName('Documento').AsString
+        );
+        qryPrinc.Next;
+      end;
+    finally
+      qryPrinc.EnableControls;
+      CloseFile(CSVFile);
+    end;
+
+    ShowMessage('Exportado com sucesso!');
+  end;
+end;
+
+procedure TForm1.btnCancelarClick(Sender: TObject);
+begin
+  qryPrinc.Cancel;
+end;
+
+procedure TForm1.btnEditarClick(Sender: TObject);
+begin
+  qryPrinc.Edit;
+end;
+
+procedure TForm1.btnExcluirClick(Sender: TObject);
+begin
+  qryPrinc.Delete;
+end;
+
+procedure TForm1.btnInserirClick(Sender: TObject);
+begin
+  // Inserção
+  memPrinc.CopyDataSet(qryPrinc, [coStructure, coRestart, coAppend]);
+
+  if not qryPrinc.Active then
+    btnPesquisarClick(nil);
+
+  if not (qryPrinc.State in [dsEdit, dsInsert]) then
+  begin
+    PageControl1.ActivePageIndex := 1;  // Gosto de mudar a aba, sempre quando faz uma inserçaõ, pois estamos trabalhando em 2 tabelas.
+    qryPrinc.Insert;
+  end;
+end;
+
+procedure TForm1.btnPesquisarClick(Sender: TObject);
+begin
+  // Aqui iremos carregar o Filtro da tela.
+  qryPrinc.Close;
+  qryPrinc.SQL.Clear;
+  qryPrinc.SQL.Text := 'SELECT * FROM [banco.csv]';
+
+  if Trim(edtPesquisar.Text) <> '' then
+  begin
+    qryPrinc.SQL.Add('WHERE (ID = :id) OR (Nome LIKE :nome)');
+    qryPrinc.ParamByName('id').AsInteger  := StrToIntDef(edtPesquisar.Text, -1);
+    qryPrinc.ParamByName('nome').AsString := '%' + edtPesquisar.Text + '%';
+  end;
+
+  qryPrinc.Open;
+end;
+
+procedure TForm1.btnSalvarClick(Sender: TObject);
+begin
+  qryPrinc.Post;
+end;
+
+procedure TForm1.controleBotoes;
+begin
+  // Utilização de status do Data Source para controlar os botões.
+  if qryPrinc.State in [dsEdit, dsInsert] then
+  begin
+    btnEditar.Enabled  := False;
+    btnInserir.Enabled := False;
+    btnExcluir.Enabled := False;
+
+    btnCancelar.Enabled := True;
+    btnSalvar.Enabled   := True;
+  end
+  else
+  begin
+    btnEditar.Enabled  := True;
+    btnInserir.Enabled := True;
+    btnExcluir.Enabled := True;
+
+    btnCancelar.Enabled := False;
+    btnSalvar.Enabled   := False;
+  end;
+end;
+
+procedure TForm1.dbEdtNomeKeyPress(Sender: TObject; var Key: Char);
+begin
+  // Regra simples para validar nome apenas com caracteres. (Não acho necessário incluir na metodologia do Model MVC).
+  if not (Key in ['A'..'Z', 'a'..'z', ' ', #8, 'Á'..'Ú', 'á'..'ú']) then
+    Key := #0;
+end;
+
+procedure TForm1.DSPrincStateChange(Sender: TObject);
+begin
+  // Atualização de Botoões na mudança de Status do Data.
+  controleBotoes;
+
+  TimerLiberarPage.Enabled := False;
+  TimerLiberarPage.Enabled := True;
+end;
+
+procedure TForm1.edtPesquisarChange(Sender: TObject);
+begin
+  btnPesquisarClick(nil);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  // Conexão ao banco de dados
+  TControllerConexao.getInstance().DaoConexao.getConexao.Connected := true;
+
+  if not (TControllerConexao.getInstance().DaoConexao.getConexao.Connected) then
+  begin
+    showmessage('Não foi possível conectar ao banco de dados!');
+    abort;
+  end;
+  // Conectar na qryPrinc a Conexão
+  qryPrinc.Connection := TControllerConexao.getInstance.DaoConexao.getConexao;
+
+  // Inicia na aba principal por padrão.
+  PageControl1.ActivePageIndex := 0;
+
+  // Dar open na Qry.
+  btnPesquisarClick(nil);
+
+  // Controle de Status de Botões.
+  controleBotoes;
+end;
+
+procedure TForm1.PageControl1Change(Sender: TObject);
+begin
+  // Garantia
+  if (PageControl1.ActivePageIndex = 0) and (qryPrinc.State in [dsEdit, dsInsert]) then
+    qryPrinc.Cancel;
+//  controleBotoes;
+end;
+
+procedure TForm1.qryPrincAfterDelete(DataSet: TDataSet);
+begin
+  // Atualizar CSV após deletar o Cadastro
+  atualizarCsv;
+end;
+
+procedure TForm1.qryPrincAfterPost(DataSet: TDataSet);
+begin
+  // Atualizar CSV após salvar o cadastro
+  atualizarCsv;
+
+  PageControl1.ActivePageIndex := 0;
+end;
+
+procedure TForm1.qryPrincAfterScroll(DataSet: TDataSet);
+begin
+  TimerLiberarPage.Enabled := False;
+  TimerLiberarPage.Enabled := True;
+end;
+
+procedure TForm1.qryPrincBeforeDelete(DataSet: TDataSet);
+begin
+  // Confirmação do Cliente(Usuário)
+  if MessageDlg('Deseja realmente excluir este cliente?', mtConfirmation,
+                [mbYes, mbNo], 0) = mrNo then
+    abort;
+end;
+
+procedure TForm1.qryPrincBeforeEdit(DataSet: TDataSet);
+begin
+  // Ir para página de cadastro
+  PageControl1.ActivePageIndex := 1;
+end;
+
+procedure TForm1.qryPrincBeforePost(DataSet: TDataSet);
+var
+  MeuId :Integer;
+  Cliente : Tcliente;
+begin
+  // Validações de Email, Nome e CNPJ
+  Cliente := TCliente.Create;
+  try
+    Cliente.Nome := dbEdtNome.Text;
+    Cliente.Email := dbEdtEmail.Text;
+    Cliente.Documento := dbEdtDocumento.Text;
+    Cliente.Validar;
+  finally
+    Cliente.Free;
+  end;
+
+  // Simples validação confirmando se o usuário realmente quer salvar o cadastro deste cliente.
+  if MessageDlg('Deseja realmente deseja salvar o cadastro deste cliente?', mtConfirmation,
+              [mbYes, mbNo], 0) = mrNo then
+    abort;
+
+  // Incrementação de um novo ID percorrendo todos e vendo qual é o maior numero.
+  // Aqui irei utilizar o MemTable, para copiar os arquivos e não percorer o meu qryTable que está sendo utilizado(Isso pode causar problemas).
+  // Irei utilizazr a metodologia de loop, ja que não temos um auto inc embutido no nosso banco de dados.
+  // Mas também tem a opção de dar UM SELECT MAX FROM TABLE e pegar o id máximo e adicionar + 1.
+  if qryPrinc.State in [dsInsert] then
+  begin
+   MeuId := 0;
+
+   memPrinc.First;
+   while not memPrinc.Eof do
+   begin
+    if memPrinc.FieldByName('ID').AsInteger > MeuId then
+      MeuId := memPrinc.FieldByName('ID').AsInteger;
+
+    memPrinc.Next;
+   end;
+
+   MeuId := MeuId + 1;
+   qryPrincID.AsInteger := MeuId;
+  end;
+end;
+
+procedure TForm1.TimerLiberarPageTimer(Sender: TObject);
+begin
+  // Vou utilizar a criação desse timer, para ser feito o controle de ativar a  página apenas em edição e inserção.
+  TimerLiberarPage.Enabled := False;
+
+  if qryPrinc.State in [dsEdit, dsInsert] then
+    TabCadastro.Enabled := True
+  else
+    TabCadastro.Enabled := False;
+end;
+
+
+end.

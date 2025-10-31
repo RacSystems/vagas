@@ -1,0 +1,18 @@
+program RacSistema;
+
+uses
+  Vcl.Forms,
+  formCadastro in 'formCadastro.pas' {Form1},
+  uControllerConexao in 'Controller\uControllerConexao.pas',
+  uDAOConexao in 'DAO\uDAOConexao.pas',
+  uValidacaoCPFCNPJ in 'Model\uValidacaoCPFCNPJ.pas',
+  uValidarCadastro in 'Model\uValidarCadastro.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TForm1, Form1);
+  Application.Run;
+end.
