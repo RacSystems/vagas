@@ -1,0 +1,64 @@
+unit uValidacaoCPFCNPJ;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.ODBC,
+  FireDAC.Phys.ODBCDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, FireDAC.Phys.ODBCBase, Vcl.ComCtrls, Vcl.StdCtrls,
+  Vcl.Buttons, System.ImageList, Vcl.ImgList, Vcl.Imaging.pngimage,
+  Vcl.ExtCtrls, FireDAC.Comp.BatchMove.DataSet, FireDAC.Comp.BatchMove,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask, Vcl.DBCtrls, FireDAC.Comp.BatchMove.Text, uDAOConexao, uControllerConexao;
+
+type
+  TValidacaoCPFCNPJ = class
+  public
+    class function ValidarCPF(const S: string): Boolean;
+    class function CNPJValido(const S: string): Boolean;
+  end;
+
+implementation
+
+
+
+{ TValidacaoCPFCNPJ }
+
+class function TValidacaoCPFCNPJ.CNPJValido(const S: string): Boolean;
+begin
+
+end;
+
+class function TValidacaoCPFCNPJ.ValidarCPF(const CPF: string): Boolean;
+var
+  CPFCalculado : String;
+  Soma, Resto, DigitoVerificador, DigitoVerificado2: Integer;
+  i: Integer;
+begin
+  CPFCalculado := '';
+
+  for I := 1 to Length(CPF) do
+  begin
+    if CharInSet(CPF[I], ['0'..'9']) then
+    begin
+      CPFCalculado := CPFCalculado + CPF[i];
+    end;
+  end;
+
+  Soma := 0;
+  for i := 1 to 9 do
+    Soma := Soma + StrToInt(CPFCalculado[i]) * (11 - i);
+  Resto := (Soma * 10) mod 11;
+  if (Resto = 10) or (Resto = StrToInt(CPFCalculado[11])) then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+end.

@@ -1,0 +1,56 @@
+unit uDAOConexao;
+
+interface
+
+uses
+  FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.ODBC,
+  FireDAC.Phys.ODBCDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, FireDAC.Phys.ODBCBase, Vcl.ComCtrls, Vcl.StdCtrls,
+  Vcl.Buttons, System.ImageList, Vcl.ImgList, Vcl.Imaging.pngimage,
+  Vcl.ExtCtrls, FireDAC.Comp.BatchMove.DataSet, FireDAC.Comp.BatchMove,
+  Vcl.Grids, Vcl.DBGrids, Vcl.Mask, Vcl.DBCtrls, FireDAC.Comp.BatchMove.Text;
+
+Type
+  TDAOConexao = class
+      private
+        FConexao : TFDConnection;
+
+      public
+        function getConexao : TFDConnection;
+
+        constructor Create;
+    destructor Destroy; override;
+  end;
+
+
+implementation
+
+{TDAOConexao}
+
+{ TDAOConexao }
+
+constructor TDAOConexao.Create;
+begin
+  inherited Create;
+
+  FConexao := TFDConnection.Create(nil);
+
+  FConexao.Params.DriverID := 'ODBC_CSV';
+  FConexao.Params.Database := 'E:\Rac Sistema\vagas\delphi\data';
+end;
+
+destructor TDAOConexao.Destroy;
+begin
+  inherited;
+
+end;
+
+function TDAOConexao.getConexao: TFDConnection;
+begin
+  result := FConexao;
+end;
+
+end.

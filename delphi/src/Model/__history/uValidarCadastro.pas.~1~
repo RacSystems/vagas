@@ -1,0 +1,38 @@
+unit uValidarCadastro;
+
+interface
+
+uses System.SysUtils, System.Character;
+
+Type
+  TValidarCadastro = class
+    public
+      procedure ValidarNome(nome: String);
+      procedure ValidarEmail(Email: String);
+  end;
+
+implementation
+
+{ TValidarCadastro }
+
+procedure TValidarCadastro.ValidarEmail(Email: String);
+begin
+  // Valida campos obrigatórios e formato do documento (CPF/CNPJ).
+  if (qryPrincNome.AsString) = '' then
+  begin
+    showmessage('Necessário preencher o campo nome!');
+    abort; // Sempre utilizo em um abort em Post e Delete;
+  end
+
+end;
+
+procedure TValidarCadastro.ValidarNome(nome: String);
+begin
+  if Trim(qryPrincEmail.AsString) = '' then
+  begin
+    ShowMessage('Necessário preencher o campo Email!');
+    abort;
+  end;
+end;
+
+end.

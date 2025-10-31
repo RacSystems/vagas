@@ -6,8 +6,7 @@ uses
   uControllerConexao in 'Controller\uControllerConexao.pas',
   uDAOConexao in 'DAO\uDAOConexao.pas',
   uValidacaoCPFCNPJ in 'Model\uValidacaoCPFCNPJ.pas',
-  uValidarCadastro in 'Model\uValidarCadastro.pas',
-  uClienteModel in 'Model\uClienteModel.pas';
+  uValidarCadastro in 'Model\uValidarCadastro.pas';
 
 {$R *.res}
 

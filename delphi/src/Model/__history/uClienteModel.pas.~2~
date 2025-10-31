@@ -1,0 +1,41 @@
+unit uClienteModel;
+
+interface
+
+uses System.SysUtils, uValidarCadastro, uValidacaoCPFCNPJ;
+
+type
+  TCliente = class
+  private
+    FID: Integer;
+    FNome: string;
+    FEmail: string;
+    FDocumento: string;
+  public
+    property ID: Integer read FID write FID;
+    property Nome: string read FNome write FNome;
+    property Email: string read FEmail write FEmail;
+    property Documento: string read FDocumento write FDocumento;
+
+    procedure Validar;
+  end;
+
+implementation
+
+procedure TCliente.Validar;
+begin
+  TValidarCadastro.ValidarNome(FNome);
+  TValidarCadastro.ValidarEmail(FEmail);
+
+  if not ((Length(FDocumento) = 11) or (Length(FDocumento) = 14)) then
+    raise Exception.Create('Documento inválido! Deve ter 11 (CPF) ou 14 (CNPJ) dígitos.');
+
+  if (Length(FDocumento) = 11) and (not TValidacaoCPFCNPJ.ValidarCPF(FDocumento)) then
+    raise Exception.Create('CPF inválido.');
+
+  if (Length(FDocumento) = 14) and (not TValidacaoCPFCNPJ.ValidarCNPJ(FDocumento)) then
+    raise Exception.Create('CNPJ inválido.');
+end;
+
+end.
+

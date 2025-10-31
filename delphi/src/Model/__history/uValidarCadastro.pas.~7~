@@ -1,0 +1,21 @@
+unit uValidarCadastro;
+
+interface
+
+uses System.SysUtils, System.Character;
+
+type
+  TValidarCadastro = class
+  public
+    function ValidarNome(const Nome: string): Boolean;
+    function ValidarEmail(const Email: string): Boolean;
+  end;
+
+
+implementation
+
+{ TValidarCadastro }
+
+
+
+end.

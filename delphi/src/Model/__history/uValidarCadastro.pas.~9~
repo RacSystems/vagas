@@ -1,0 +1,46 @@
+unit uValidarCadastro;
+
+interface
+
+uses
+  System.SysUtils, System.RegularExpressions;
+
+type
+  TValidarCadastro = class
+  public
+    class procedure ValidarNome(const Nome: string);
+    class procedure ValidarEmail(const Email: string);
+  end;
+
+implementation
+
+{ TValidarCadastro }
+
+class procedure TValidarCadastro.ValidarNome(const Nome: string);
+begin
+  if Trim(Nome) = '' then
+  begin
+    ShowMessage('O campo Nome é obrigatório!');
+    Abort;
+  end;
+end;
+
+class procedure TValidarCadastro.ValidarEmail(const Email: string);
+const
+  EMAIL_REGEX = '^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$';
+begin
+  if Trim(Email) = '' then
+  begin
+    ShowMessage('O campo E-mail é obrigatório!');
+    Abort;
+  end;
+
+  if not TRegEx.IsMatch(Email, EMAIL_REGEX, [roIgnoreCase]) then
+  begin
+    ShowMessage('E-mail inválido!');
+    Abort;
+  end;
+end;
+
+end.
+

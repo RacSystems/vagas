@@ -98,10 +98,15 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="CadastroCliente.pas">
+        <DCCReference Include="formCadastro.pas">
             <Form>Form1</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="Controller\uControllerConexao.pas"/>
+        <DCCReference Include="DAO\uDAOConexao.pas"/>
+        <DCCReference Include="Model\uValidacaoCPFCNPJ.pas"/>
+        <DCCReference Include="Model\uValidarCadastro.pas"/>
+        <DCCReference Include="Model\uClienteModel.pas"/>
         <None Include="..\data\banco.csv"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>

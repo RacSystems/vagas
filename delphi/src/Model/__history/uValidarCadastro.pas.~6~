@@ -1,0 +1,38 @@
+unit uValidarCadastro;
+
+interface
+
+uses System.SysUtils, System.Character;
+
+type
+  TValidarCadastro = class
+  public
+    function ValidarNome(const Nome: string): Boolean;
+    function ValidarEmail(const Email: string): Boolean;
+  end;
+
+
+implementation
+
+{ TValidarCadastro }
+
+class function TValidarCadastro.ValidarEmail(Email: String);
+begin
+  // Valida campos obrigatórios e formato do documento (CPF/CNPJ).
+//  if (qryPrincNome.AsString) = '' then
+//  begin
+//    showmessage('Necessário preencher o campo nome!');
+//    abort; // Sempre utilizo em um abort em Post e Delete;
+//  end
+end;
+
+class function TValidarCadastro.ValidarNome(nome: String);
+begin
+//  if Trim(qryPrincEmail.AsString) = '' then
+//  begin
+//    ShowMessage('Necessário preencher o campo Email!');
+//    abort;
+//  end;
+end;
+
+end.
